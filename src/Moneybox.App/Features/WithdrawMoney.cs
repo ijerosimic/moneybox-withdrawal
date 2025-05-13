@@ -24,7 +24,7 @@ namespace Moneybox.App.Features
                 throw new InvalidOperationException("Insufficient funds to make transfer");
             }
             
-            if (!from.IsFundsLow())
+            if (from.IsFundsLow())
             {
                 notificationService.NotifyFundsLow(from.User.Email);
             }

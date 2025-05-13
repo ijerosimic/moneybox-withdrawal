@@ -17,14 +17,9 @@ public class TransferMoneyTests
         var toAccountId = Guid.NewGuid();
         var toAccount = Account.Create(toAccountId, new User(), 500);
 
-        var mockRepository = new Mock<IAccountRepository>();
-        mockRepository
-            .Setup(repo => repo.GetAccountById(fromAccountId))
-            .Returns(fromAccount);
-        mockRepository
-            .Setup(repo => repo.GetAccountById(toAccountId))
-            .Returns(toAccount);
-        var mockRepo = mockRepository.Object;
+        var mockRepo = Mock.Of<IAccountRepository>(repo =>
+            repo.GetAccountById(fromAccountId) == fromAccount &&
+            repo.GetAccountById(toAccountId) == toAccount);
         
         var mockNotificationService = new Mock<INotificationService>();
         mockNotificationService
@@ -39,5 +34,7 @@ public class TransferMoneyTests
         
         from.Balance.Should().Be(900);
         to.Balance.Should().Be(600);
+        
+        mockNotificationService.Verify(service => service.NotifyFundsLow(It.IsAny<string>()), Times.Never);
     }
 }
