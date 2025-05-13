@@ -1,6 +1,7 @@
 ﻿using Moneybox.App.DataAccess;
 using Moneybox.App.Domain.Services;
 using System;
+using System.Transactions;
 
 namespace Moneybox.App.Features
 {
@@ -20,36 +21,65 @@ namespace Moneybox.App.Features
             var from = this.accountRepository.GetAccountById(fromAccountId);
             var to = this.accountRepository.GetAccountById(toAccountId);
 
-            var fromBalance = from.Balance - amount;
-            if (fromBalance < 0m)
+            // var fromBalance = from.Balance - amount;
+            // if (fromBalance < 0m)
+            // {
+            //     throw new InvalidOperationException("Insufficient funds to make transfer");
+            // }
+            
+            if (!from.CanWithdraw(amount))
             {
                 throw new InvalidOperationException("Insufficient funds to make transfer");
             }
-
-            if (fromBalance < 500m)
+            
+            // if (fromBalance < 500m)
+            // {
+            //     this.notificationService.NotifyFundsLow(from.User.Email);
+            // }
+            
+            if (!from.IsFundsLow())
             {
-                this.notificationService.NotifyFundsLow(from.User.Email);
+                notificationService.NotifyFundsLow(from.User.Email);
             }
-
-            var paidIn = to.PaidIn + amount;
-            if (paidIn > Account.PayInLimit)
+            
+            // var paidIn = to.PaidIn + amount;
+            // if (paidIn > Account.PayInLimit)
+            // {
+            //     throw new InvalidOperationException("Account pay in limit reached");
+            // }
+            
+            if (!to.CanDeposit(amount))
             {
                 throw new InvalidOperationException("Account pay in limit reached");
             }
 
-            if (Account.PayInLimit - paidIn < 500m)
+            // if (Account.PayInLimit - paidIn < 500m)
+            // {
+            //     this.notificationService.NotifyApproachingPayInLimit(to.User.Email);
+            // }
+            
+            if (to.IsApproachingPayInLimit(amount))
             {
-                this.notificationService.NotifyApproachingPayInLimit(to.User.Email);
+                notificationService.NotifyApproachingPayInLimit(to.User.Email);
             }
 
-            from.Balance = from.Balance - amount;
-            from.Withdrawn = from.Withdrawn - amount;
+            // from.Balance = from.Balance - amount;
+            // from.Withdrawn = from.Withdrawn - amount;
+            
+            using var transaction = new TransactionScope();
+            try
+            {
+                from.Withdraw(amount);
+                to.Deposit(amount);
+                this.accountRepository.Update(from);
+                this.accountRepository.Update(to);
+            }
+            catch (Exception e)
+            {
+                //Handle exception
+            }
 
-            to.Balance = to.Balance + amount;
-            to.PaidIn = to.PaidIn + amount;
-
-            this.accountRepository.Update(from);
-            this.accountRepository.Update(to);
+            transaction.Complete();
         }
     }
 }
