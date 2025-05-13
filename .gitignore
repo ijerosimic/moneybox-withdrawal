@@ -203,4 +203,4 @@ FakesAssemblies/
 *.opt
 
 # Generated typescript files
-*.ts
+*.ts.DS_Store
