@@ -25,6 +25,9 @@ public class TransferMoneyTests
         mockNotificationService
             .Setup(service => service.NotifyFundsLow(It.IsAny<string>()))
             .Verifiable();
+        mockNotificationService
+            .Setup(service => service.NotifyApproachingPayInLimit(It.IsAny<string>()))
+            .Verifiable();
         
         var from = mockRepo.GetAccountById(fromAccountId)!;
         var to = mockRepo.GetAccountById(toAccountId)!;
@@ -36,5 +39,6 @@ public class TransferMoneyTests
         to.Balance.Should().Be(600);
         
         mockNotificationService.Verify(service => service.NotifyFundsLow(It.IsAny<string>()), Times.Never);
+        mockNotificationService.Verify(service => service.NotifyApproachingPayInLimit(It.IsAny<string>()), Times.Never);
     }
 }
