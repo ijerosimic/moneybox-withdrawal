@@ -1,6 +1,7 @@
 ﻿using Moneybox.App.DataAccess;
 using Moneybox.App.Domain.Services;
 using System;
+using System.Transactions;
 
 namespace Moneybox.App.Features
 {
@@ -29,10 +30,10 @@ namespace Moneybox.App.Features
                 notificationService.NotifyFundsLow(from.User.Email);
             }
             
-            from.Withdraw(amount);
-            
+            using var transaction = new TransactionScope();
             try
             {
+                from.Withdraw(amount);
                 this.accountRepository.Update(from);
             }
             catch (Exception e)
@@ -40,10 +41,7 @@ namespace Moneybox.App.Features
                 //Handle exception
             }
             
-            if (from.IsFundsLow())
-            {
-                notificationService.NotifyFundsLow(from.User.Email);
-            }
+            transaction.Complete();
         }
     }
 }

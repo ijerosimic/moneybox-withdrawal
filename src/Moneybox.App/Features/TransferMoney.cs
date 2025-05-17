@@ -54,10 +54,6 @@ namespace Moneybox.App.Features
                 //Handle exception
             }
             
-            if (from.IsFundsLow())
-            {
-                notificationService.NotifyFundsLow(from.User.Email);
-            }
             transaction.Complete();
         }
     }
